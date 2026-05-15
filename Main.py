@@ -14,7 +14,7 @@ def main():
     )
 
     pygame.display.set_caption(
-        "Segure Sua Respiração"
+        "Simulador de Ansiedade"
     )
 
     relogio = pygame.time.Clock()
