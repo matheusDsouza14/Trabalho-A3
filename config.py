@@ -1,0 +1,19 @@
+WIDTH = 1280
+HEIGHT = 720
+
+FPS = 60
+
+BACKGROUND = (18, 18, 24)
+
+WHITE = (240, 240, 240)
+GRAY = (130, 130, 130)
+
+RED = (220, 80, 80)
+GREEN = (120, 220, 140)
+BLUE = (120, 180, 255)
+
+PANEL = (35, 35, 45)
+
+FONT = "freesansbold.ttf"
+
+MAX_ANXIETY = 100
