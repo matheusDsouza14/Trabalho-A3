@@ -16,7 +16,13 @@ PENSAMENTOS_NEGATIVOS = [
     "Você vai falhar",
     "Você parece estranho",
     "Todos estão olhando",
-    "Você vai esquecer tudo"
+    "Você vai esquecer tudo",
+    "Você está piorando",
+    "Você deveria parar",
+    "Você parece nervoso",
+    "Você não consegue",
+    "Vai dar errado",
+    "Você está travando"
 
 ]
 
@@ -89,8 +95,6 @@ class Pensamento:
             self.x = random.randint(100, 780)
 
             self.y = random.randint(80, 520)
-
-            # NÃO SOBREPOR RESPIRAÇÃO
 
             if not (
                 self.x > 850 and
@@ -178,10 +182,10 @@ class SistemaPensamentos:
         self.temporizador_spawn = 0
 
         # =================================================
-        # CHANCE BASE
+        # CHANCE NORMAL DE NEGATIVOS
         # =================================================
 
-        self.chance_negativa = 0.12
+        self.chance_negativa = 0.45
 
     # =====================================================
     # CRIAR PENSAMENTO
@@ -216,11 +220,11 @@ class SistemaPensamentos:
         # VELOCIDADE DE SPAWN
         # =================================================
 
-        velocidade_spawn = 2.5
+        velocidade_spawn = 2.2
 
         if estado_jogo.ansiedade > 60:
 
-            velocidade_spawn = 1.8
+            velocidade_spawn = 1.5
 
         # =================================================
         # RESPIRAR AUMENTA NEGATIVOS
@@ -228,7 +232,7 @@ class SistemaPensamentos:
 
         if estado_jogo.respiracao.segurar:
 
-            chance_negativa_atual = 0.45
+            chance_negativa_atual = 0.75
 
         else:
 
@@ -261,7 +265,7 @@ class SistemaPensamentos:
 
             if not positivo:
 
-                estado_jogo.velocidade_ansiedade += 1
+                estado_jogo.velocidade_ansiedade += 1.2
 
         # =================================================
         # CLIQUES
@@ -286,7 +290,7 @@ class SistemaPensamentos:
                             pensamento.clicado = True
 
                             # =================================
-                            # POSITIVOS AJUDAM
+                            # POSITIVOS REDUZEM ANSIEDADE
                             # =================================
 
                             if pensamento.positivo:
