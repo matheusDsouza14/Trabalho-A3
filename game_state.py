@@ -1,534 +1,333 @@
 import pygame
 
 from config import *
+from ui import SistemaUI
+from breathing import SistemaRespiracao
+from thoughts import SistemaPensamentos
+from presentation import SistemaApresentacao
 
-from ui import UISystem
-from breathing import BreathSystem
-from thoughts import ThoughtSystem
-from presentation import PresentationSystem
 
+class EstadoJogo:
 
-class GameState:
+    def __init__(self, tela):
 
-    def __init__(self, screen):
+        self.tela = tela
 
-        self.screen = screen
+        self.rodando = True
 
-        self.running = True
-
-        self.font = pygame.font.Font(FONT, 28)
-
-        self.big_font = pygame.font.Font(FONT, 62)
-
-        self.ui = UISystem()
-
-        self.state = "menu"
-
-    # -----------------------------------
-    # START GAME
-    # -----------------------------------
-
-    def start_game(self, questions):
-
-        self.anxiety = 10
-
-        self.ui.display_anxiety = self.anxiety
-
-        self.game_timer = 0
-
-        self.anxiety_rate = 2
-
-        self.positive_chance = 0.18
-
-        self.state = "playing"
-
-        self.breath = BreathSystem()
-
-        self.thoughts = ThoughtSystem()
-
-        self.presentation = PresentationSystem(
-            questions
+        self.fonte = pygame.font.Font(
+            FONTE,
+            int(30 * 1.07)
         )
 
-    # -----------------------------------
-    # RESET
-    # -----------------------------------
+        self.fonte_grande = pygame.font.Font(
+            FONTE,
+            int(66 * 1.07)
+        )
 
-    def reset_to_menu(self):
+        self.ui = SistemaUI()
 
-        self.state = "menu"
+        self.estado = "jogando"
 
-    # -----------------------------------
+        self.iniciar_jogo()
+
+    # =====================================================
+    # INICIAR JOGO
+    # =====================================================
+
+    def iniciar_jogo(self):
+
+        self.ansiedade = 10
+
+        self.ui.ansiedade_visual = self.ansiedade
+
+        self.temporizador_jogo = 0
+
+        self.velocidade_ansiedade = 2
+
+        self.chance_positiva = 0.18
+
+        self.estado = "jogando"
+
+        self.respiracao = SistemaRespiracao()
+
+        self.pensamentos = SistemaPensamentos()
+
+        # =================================================
+        # 9 PERGUNTAS
+        # =================================================
+
+        self.apresentacao = SistemaApresentacao(9)
+
+    # =====================================================
+    # REINICIAR
+    # =====================================================
+
+    def reiniciar(self):
+
+        self.iniciar_jogo()
+
+    # =====================================================
     # UPDATE
-    # -----------------------------------
+    # =====================================================
 
-    def update(self, dt, events):
+    def atualizar(self, dt, eventos):
 
-        # -----------------------------------
-        # MENU
-        # -----------------------------------
+        if self.estado in ["vitoria", "derrota"]:
 
-        if self.state == "menu":
+            for evento in eventos:
 
-            mouse = pygame.mouse.get_pos()
+                if evento.type == pygame.MOUSEBUTTONDOWN:
 
-            # UPDATED QUESTION COUNTS
-            difficulties = [
-
-                ("Easy", 10),
-
-                ("Medium", 15),
-
-                ("Hard", 20),
-
-                ("Super Hard", 25)
-            ]
-
-            for event in events:
-
-                if event.type == pygame.MOUSEBUTTONDOWN:
-
-                    for i, (_, amount) in enumerate(difficulties):
-
-                        rect = pygame.Rect(
-                            WIDTH // 2 - 200,
-                            240 + i * 100,
-                            400,
-                            70
-                        )
-
-                        if rect.collidepoint(mouse):
-
-                            self.start_game(amount)
+                    self.reiniciar()
 
             return
 
-        # -----------------------------------
-        # END STATES
-        # -----------------------------------
+        self.temporizador_jogo += dt
 
-        if self.state in ["win", "fail"]:
+        # =================================================
+        # RESPIRAÇÃO
+        # =================================================
 
-            for event in events:
-
-                if event.type == pygame.MOUSEBUTTONDOWN:
-
-                    self.reset_to_menu()
-
-            return
-
-        # -----------------------------------
-        # GAMEPLAY
-        # -----------------------------------
-
-        self.game_timer += dt
-
-        # -----------------------------------
-        # BREATHING
-        # -----------------------------------
-
-        breath_success = self.breath.update(
-            events,
+        sucesso_respiracao = self.respiracao.atualizar(
+            eventos,
             dt
         )
 
-        if breath_success:
+        if sucesso_respiracao:
 
-            self.anxiety -= 15
+            self.ansiedade -= 15
 
-            self.positive_chance += 0.04
+            self.chance_positiva += 0.04
 
-            self.positive_chance = min(
+            self.chance_positiva = min(
                 0.60,
-                self.positive_chance
+                self.chance_positiva
             )
 
-        # -----------------------------------
-        # PASSIVE ANXIETY
-        # -----------------------------------
+        # =================================================
+        # ANSIEDADE PASSIVA
+        # =================================================
 
-        if self.game_timer > 3:
+        if self.temporizador_jogo > 3:
 
-            self.anxiety += dt * self.anxiety_rate
+            self.ansiedade += (
+                dt * self.velocidade_ansiedade
+            )
 
-        # -----------------------------------
-        # THOUGHTS
-        # -----------------------------------
+        # =================================================
+        # PENSAMENTOS
+        # =================================================
 
-        thought_result = self.thoughts.update(
-            events,
+        resultado_pensamentos = self.pensamentos.atualizar(
+            eventos,
             self,
             dt
         )
 
-        thought_anxiety, click_consumed = thought_result
+        mudanca_ansiedade, clique_consumido = (
+            resultado_pensamentos
+        )
 
-        self.anxiety += thought_anxiety
+        self.ansiedade += mudanca_ansiedade
 
-        # -----------------------------------
-        # QUESTIONS
-        # -----------------------------------
+        # =================================================
+        # PERGUNTAS
+        # =================================================
 
-        if not click_consumed:
+        if not clique_consumido:
 
-            self.presentation.update(
-                events,
+            self.apresentacao.atualizar(
+                eventos,
                 self
             )
 
-        # -----------------------------------
-        # CLAMP
-        # -----------------------------------
+        # =================================================
+        # LIMITADOR
+        # =================================================
 
-        self.anxiety = max(
+        self.ansiedade = max(
             0,
-            min(MAX_ANXIETY, self.anxiety)
+            min(
+                ANSIEDADE_MAXIMA,
+                self.ansiedade
+            )
         )
 
-        # -----------------------------------
-        # UI UPDATE
-        # -----------------------------------
+        # =================================================
+        # UI
+        # =================================================
 
-        self.ui.update(
-            self.anxiety,
+        self.ui.atualizar(
+            self.ansiedade,
             dt
         )
 
-        # -----------------------------------
-        # FAIL
-        # -----------------------------------
+        # =================================================
+        # DERROTA
+        # =================================================
 
-        if self.anxiety >= 100:
+        if self.ansiedade >= 100:
 
-            self.state = "fail"
+            self.estado = "derrota"
 
-        # -----------------------------------
-        # WIN
-        # -----------------------------------
+        # =================================================
+        # VITÓRIA
+        # =================================================
 
-        if self.presentation.completed:
+        if self.apresentacao.completado:
 
-            self.state = "win"
+            self.estado = "vitoria"
 
-    # -----------------------------------
-    # LOWER / CLEANER BLUR
-    # -----------------------------------
+    # =====================================================
+    # BLUR
+    # =====================================================
 
-    def apply_blur(self, surface):
+    def aplicar_blur(self, superficie):
 
-        if self.anxiety < 35:
+        if self.ansiedade < 35:
 
-            return surface
+            return superficie
 
-        intensity = self.anxiety / 100
+        intensidade = self.ansiedade / 100
 
-        scale = max(
+        escala = max(
             0.22,
-            1 - (intensity * 0.9)
+            1 - (intensidade * 0.9)
         )
 
-        width = max(
+        largura = max(
             1,
-            int(WIDTH * scale)
+            int(LARGURA * escala)
         )
 
-        height = max(
+        altura = max(
             1,
-            int(HEIGHT * scale)
+            int(ALTURA * escala)
         )
 
-        # PASS 1
-        small = pygame.transform.smoothscale(
-            surface,
-            (width, height)
+        pequena = pygame.transform.smoothscale(
+            superficie,
+            (largura, altura)
         )
 
-        blurred = pygame.transform.smoothscale(
-            small,
-            (WIDTH, HEIGHT)
+        borrada = pygame.transform.smoothscale(
+            pequena,
+            (LARGURA, ALTURA)
         )
 
-        # PASS 2
-        if self.anxiety > 75:
+        return borrada
 
-            width2 = max(
-                1,
-                int(width * 0.7)
-            )
+    # =====================================================
+    # TELA FINAL
+    # =====================================================
 
-            height2 = max(
-                1,
-                int(height * 0.7)
-            )
+    def desenhar_final(self, venceu):
 
-            small2 = pygame.transform.smoothscale(
-                blurred,
-                (width2, height2)
-            )
+        if venceu:
 
-            blurred = pygame.transform.smoothscale(
-                small2,
-                (WIDTH, HEIGHT)
-            )
+            titulo = "Você conseguiu."
 
-        return blurred
-
-    # -----------------------------------
-    # MENU
-    # -----------------------------------
-
-    def draw_menu(self):
-
-        title = self.big_font.render(
-            "Hold Your Breath",
-            True,
-            WHITE
-        )
-
-        self.screen.blit(
-            title,
-            (
-                WIDTH // 2
-                - title.get_width() // 2,
-                100
-            )
-        )
-
-        subtitle = self.font.render(
-            "Choose a difficulty",
-            True,
-            GRAY
-        )
-
-        self.screen.blit(
-            subtitle,
-            (
-                WIDTH // 2
-                - subtitle.get_width() // 2,
-                170
-            )
-        )
-
-        # UPDATED TEXT
-        difficulties = [
-
-            ("Easy", "10 Questions"),
-
-            ("Medium", "15 Questions"),
-
-            ("Hard", "20 Questions"),
-
-            ("Super Hard", "25 Questions")
-        ]
-
-        mouse = pygame.mouse.get_pos()
-
-        for i, (name, desc) in enumerate(difficulties):
-
-            rect = pygame.Rect(
-                WIDTH // 2 - 200,
-                240 + i * 100,
-                400,
-                70
-            )
-
-            hovering = rect.collidepoint(mouse)
-
-            color = PANEL
-
-            if hovering:
-
-                color = (60, 60, 80)
-
-            pygame.draw.rect(
-                self.screen,
-                color,
-                rect,
-                border_radius=16
-            )
-
-            pygame.draw.rect(
-                self.screen,
-                WHITE,
-                rect,
-                2,
-                border_radius=16
-            )
-
-            text = self.font.render(
-                f"{name} - {desc}",
-                True,
-                WHITE
-            )
-
-            self.screen.blit(
-                text,
-                (
-                    rect.centerx
-                    - text.get_width() // 2,
-
-                    rect.centery
-                    - text.get_height() // 2
-                )
-            )
-
-    # -----------------------------------
-    # END SCREEN
-    # -----------------------------------
-
-    def draw_end(self, win):
-
-        if win:
-
-            title = "You made it."
-
-            lines = [
-
-                "Nobody noticed the chaos inside your head.",
-
-                "The presentation went well."
+            linhas = [
+                "Ninguém percebeu o caos na sua mente.",
+                "A apresentação terminou bem.",
+                "Tudo estava na sua cabeça."
             ]
 
-            color = WHITE
+            cor = BRANCO
 
         else:
 
-            title = "You lost control."
+            titulo = "Você perdeu o controle."
 
-            lines = [
-
-                "You could not control your breath",
-
-                "and ran right to the bathroom",
-
-                "to recollect yourself.",
-
-                "You fainted."
+            linhas = [
+                "Você não conseguiu",
+                "controlar sua respiração.",
+                "A ansiedade venceu."
             ]
 
-            color = RED
+            cor = VERMELHO
 
-        title_render = self.big_font.render(
-            title,
+        render_titulo = self.fonte_grande.render(
+            titulo,
             True,
-            color
+            cor
         )
 
-        self.screen.blit(
-            title_render,
+        self.tela.blit(
+            render_titulo,
             (
-                WIDTH // 2
-                - title_render.get_width() // 2,
+                LARGURA // 2
+                - render_titulo.get_width() // 2,
                 180
             )
         )
 
-        for i, line in enumerate(lines):
+        for i, linha in enumerate(linhas):
 
-            text = self.font.render(
-                line,
+            render = self.fonte.render(
+                linha,
                 True,
-                WHITE
+                BRANCO
             )
 
-            self.screen.blit(
-                text,
+            self.tela.blit(
+                render,
                 (
-                    WIDTH // 2
-                    - text.get_width() // 2,
-
+                    LARGURA // 2
+                    - render.get_width() // 2,
                     320 + i * 50
                 )
             )
 
-        restart = self.font.render(
-            "Click to return to menu",
-            True,
-            GRAY
-        )
-
-        self.screen.blit(
-            restart,
-            (
-                WIDTH // 2
-                - restart.get_width() // 2,
-                620
-            )
-        )
-
-    # -----------------------------------
+    # =====================================================
     # DRAW
-    # -----------------------------------
+    # =====================================================
 
-    def draw(self):
+    def desenhar(self):
 
-        self.screen.fill(BACKGROUND)
+        self.tela.fill(FUNDO)
 
-        # MENU
-        if self.state == "menu":
+        if self.estado == "vitoria":
 
-            self.draw_menu()
-
-            return
-
-        # WIN
-        if self.state == "win":
-
-            self.draw_end(True)
+            self.desenhar_final(True)
 
             return
 
-        # FAIL
-        if self.state == "fail":
+        if self.estado == "derrota":
 
-            self.draw_end(False)
+            self.desenhar_final(False)
 
             return
 
-        # -----------------------------------
-        # GAMEPLAY SURFACE
-        # -----------------------------------
-
-        gameplay_surface = pygame.Surface(
-            (WIDTH, HEIGHT)
+        superficie_jogo = pygame.Surface(
+            (LARGURA, ALTURA)
         ).convert()
 
-        gameplay_surface.fill(BACKGROUND)
+        superficie_jogo.fill(FUNDO)
 
-        # -----------------------------------
-        # DRAW GAMEPLAY
-        # -----------------------------------
-
-        self.presentation.draw(
-            gameplay_surface
+        self.apresentacao.desenhar(
+            superficie_jogo
         )
 
-        self.breath.draw(
-            gameplay_surface
+        self.respiracao.desenhar(
+            superficie_jogo
         )
 
-        self.ui.draw(
-            gameplay_surface,
-            self.font
+        self.ui.desenhar(
+            superficie_jogo,
+            self.fonte
         )
 
-        # -----------------------------------
-        # BLUR
-        # -----------------------------------
-
-        blurred_surface = self.apply_blur(
-            gameplay_surface
+        superficie_borrada = self.aplicar_blur(
+            superficie_jogo
         )
 
-        self.screen.blit(
-            blurred_surface,
+        self.tela.blit(
+            superficie_borrada,
             (0, 0)
         )
 
-        # -----------------------------------
-        # SHARP THOUGHTS
-        # -----------------------------------
-
-        self.thoughts.draw(
-            self.screen
+        self.pensamentos.desenhar(
+            self.tela
         )

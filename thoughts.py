@@ -3,97 +3,95 @@ import random
 
 from config import *
 
-
 # =========================================================
-# NEGATIVE THOUGHT DATABASE
-# =========================================================
-# ADD AS MANY AS YOU WANT
+# PENSAMENTOS NEGATIVOS
 # =========================================================
 
-NEGATIVE_THOUGHTS = [
+PENSAMENTOS_NEGATIVOS = [
 
-    "Everyone noticed your voice shaking",
+    "Todos perceberam seu nervosismo",
+    "Você vai perder o controle",
+    "Estão julgando você",
+    "Sua voz está tremendo",
+    "Você vai falhar",
+    "Você parece estranho",
+    "Todos estão olhando",
+    "Você vai esquecer tudo"
 
-    "You're embarrassing yourself",
-
-    "You forgot everything",
-
-    "They're judging you",
-
-    "You're failing",
-
-    "You sound nervous",
-
-    "They think you're stupid",
-
-    "Everyone is staring at you",
-
-    "You're ruining the presentation",
-
-    "You should leave the room"
 ]
 
-
 # =========================================================
-# POSITIVE THOUGHT DATABASE
-# =========================================================
-# ADD AS MANY AS YOU WANT
+# PENSAMENTOS POSITIVOS
 # =========================================================
 
-POSITIVE_THOUGHTS = [
+PENSAMENTOS_POSITIVOS = [
 
-    "Just keep going",
+    "Continue respirando",
+    "Você consegue",
+    "Vai ficar tudo bem",
+    "Continue falando",
+    "Respire devagar",
+    "Você está no controle",
+    "Ninguém percebeu",
+    "Você está indo bem",
+    "Só continue",
+    "Foque na apresentação",
+    "Você consegue passar por isso",
+    "Continue calmo",
+    "Respire profundamente",
+    "Você ainda está conseguindo"
 
-    "Breathe slowly",
-
-    "Nobody expects perfection",
-
-    "You're okay",
-
-    "You can do this",
-
-    "Focus on the presentation",
-
-    "You're still standing",
-
-    "Keep breathing",
-
-    "You're doing better than you think",
-
-    "One step at a time"
 ]
 
-
 # =========================================================
-# THOUGHT
+# PENSAMENTO
 # =========================================================
 
-class Thought:
+class Pensamento:
 
-    def __init__(self, text, positive):
+    def __init__(self, texto, positivo):
 
-        self.text = text
+        self.texto = texto
 
-        self.positive = positive
+        self.positivo = positivo
 
-        self.timer = 5
+        self.clicado = False
 
-        self.clicked = False
+        self.fonte = pygame.font.Font(
+            FONTE,
+            int(30 * 1.07)
+        )
 
-        self.font = pygame.font.Font(FONT, 28)
+        largura_texto = self.fonte.size(
+            texto
+        )[0]
 
-        self.width = 500
+        self.largura = max(
+            320,
+            largura_texto + 60
+        )
 
-        self.height = 120
+        self.altura = 120
 
-        # RANDOM POSITION
+        # =================================================
+        # POSITIVOS SOMEM
+        # NEGATIVOS FICAM
+        # =================================================
+
+        self.tempo = 30 if positivo else -1
+
+        # =================================================
+        # POSIÇÃO
+        # =================================================
+
         while True:
 
-            self.x = random.randint(120, 650)
+            self.x = random.randint(100, 780)
 
-            self.y = random.randint(80, 500)
+            self.y = random.randint(80, 520)
 
-            # AVOID BREATH BUTTON
+            # NÃO SOBREPOR RESPIRAÇÃO
+
             if not (
                 self.x > 850 and
                 self.y > 450
@@ -103,207 +101,235 @@ class Thought:
         self.rect = pygame.Rect(
             self.x,
             self.y,
-            self.width,
-            self.height
+            self.largura,
+            self.altura
         )
 
-    # -----------------------------------------------------
+    # =====================================================
     # UPDATE
-    # -----------------------------------------------------
+    # =====================================================
 
-    def update(self, dt):
+    def atualizar(self, dt):
 
-        self.timer -= dt
+        if self.positivo:
 
-    # -----------------------------------------------------
+            self.tempo -= dt
+
+    # =====================================================
     # DRAW
-    # -----------------------------------------------------
+    # =====================================================
 
-    def draw(self, screen):
+    def desenhar(self, tela):
 
-        if self.positive:
+        if self.positivo:
 
-            bg = (40, 90, 60)
+            fundo = (40, 90, 60)
 
-            border = GREEN
+            borda = VERDE
 
         else:
 
-            bg = (90, 40, 40)
+            fundo = (90, 40, 40)
 
-            border = RED
+            borda = VERMELHO
 
         pygame.draw.rect(
-            screen,
-            bg,
+            tela,
+            fundo,
             self.rect,
             border_radius=18
         )
 
         pygame.draw.rect(
-            screen,
-            border,
+            tela,
+            borda,
             self.rect,
             4,
             border_radius=18
         )
 
-        text = self.font.render(
-            self.text,
+        render = self.fonte.render(
+            self.texto,
             True,
-            WHITE
+            BRANCO
         )
 
-        screen.blit(
-            text,
+        tela.blit(
+            render,
             (
                 self.rect.centerx
-                - text.get_width() // 2,
+                - render.get_width() // 2,
 
                 self.rect.centery
-                - text.get_height() // 2
+                - render.get_height() // 2
             )
         )
 
-
 # =========================================================
-# THOUGHT SYSTEM
+# SISTEMA DE PENSAMENTOS
 # =========================================================
 
-class ThoughtSystem:
+class SistemaPensamentos:
 
     def __init__(self):
 
-        self.thoughts = []
+        self.pensamentos = []
 
-        self.spawn_timer = 0
+        self.temporizador_spawn = 0
 
-    # -----------------------------------------------------
-    # RANDOM THOUGHT
-    # -----------------------------------------------------
+        # =================================================
+        # CHANCE BASE
+        # =================================================
 
-    def create_random_thought(self, positive):
+        self.chance_negativa = 0.12
 
-        if positive:
+    # =====================================================
+    # CRIAR PENSAMENTO
+    # =====================================================
 
-            text = random.choice(
-                POSITIVE_THOUGHTS
-            )
+    def criar_pensamento(self, positivo):
+
+        lista = (
+            PENSAMENTOS_POSITIVOS
+            if positivo
+            else PENSAMENTOS_NEGATIVOS
+        )
+
+        return Pensamento(
+            random.choice(lista),
+            positivo
+        )
+
+    # =====================================================
+    # UPDATE
+    # =====================================================
+
+    def atualizar(self, eventos, estado_jogo, dt):
+
+        self.temporizador_spawn += dt
+
+        mudanca_ansiedade = 0
+
+        clique_consumido = False
+
+        # =================================================
+        # VELOCIDADE DE SPAWN
+        # =================================================
+
+        velocidade_spawn = 2.5
+
+        if estado_jogo.ansiedade > 60:
+
+            velocidade_spawn = 1.8
+
+        # =================================================
+        # RESPIRAR AUMENTA NEGATIVOS
+        # =================================================
+
+        if estado_jogo.respiracao.segurar:
+
+            chance_negativa_atual = 0.45
 
         else:
 
-            text = random.choice(
-                NEGATIVE_THOUGHTS
-            )
+            chance_negativa_atual = self.chance_negativa
 
-        return Thought(text, positive)
+        # =================================================
+        # GERAR PENSAMENTOS
+        # =================================================
 
-    # -----------------------------------------------------
-    # UPDATE
-    # -----------------------------------------------------
+        if self.temporizador_spawn >= velocidade_spawn:
 
-    def update(self, events, game_state, dt):
+            self.temporizador_spawn = 0
 
-        self.spawn_timer += dt
-
-        anxiety_change = 0
-
-        click_consumed = False
-
-        # -------------------------------------------------
-        # SPAWN SPEED
-        # -------------------------------------------------
-
-        spawn_speed = 2.5
-
-        if game_state.anxiety > 50:
-            spawn_speed = 1.8
-
-        if game_state.anxiety > 75:
-            spawn_speed = 1.2
-
-        # -------------------------------------------------
-        # SPAWN RANDOM THOUGHT
-        # -------------------------------------------------
-
-        if self.spawn_timer >= spawn_speed:
-
-            self.spawn_timer = 0
-
-            positive = (
-
+            positivo = (
                 random.random()
-
-                < game_state.positive_chance
+                > chance_negativa_atual
             )
 
-            self.thoughts.append(
-                self.create_random_thought(
-                    positive
-                )
+            pensamento = self.criar_pensamento(
+                positivo
             )
 
-        # -------------------------------------------------
-        # CLICK DETECTION
-        # -------------------------------------------------
+            self.pensamentos.append(
+                pensamento
+            )
 
-        for event in events:
+            # =============================================
+            # NEGATIVOS AUMENTAM PRESSÃO
+            # =============================================
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if not positivo:
 
-                if event.button == 1:
+                estado_jogo.velocidade_ansiedade += 1
 
-                    for thought in reversed(self.thoughts):
+        # =================================================
+        # CLIQUES
+        # =================================================
 
-                        if thought.rect.collidepoint(event.pos):
+        for evento in eventos:
 
-                            click_consumed = True
+            if evento.type == pygame.MOUSEBUTTONDOWN:
 
-                            thought.clicked = True
+                if evento.button == 1:
 
-                            # ONLY POSITIVE
-                            # REDUCES ANXIETY
-                            if thought.positive:
+                    for pensamento in reversed(
+                        self.pensamentos
+                    ):
 
-                                anxiety_change -= 20
+                        if pensamento.rect.collidepoint(
+                            evento.pos
+                        ):
+
+                            clique_consumido = True
+
+                            pensamento.clicado = True
+
+                            # =================================
+                            # POSITIVOS AJUDAM
+                            # =================================
+
+                            if pensamento.positivo:
+
+                                mudanca_ansiedade -= 18
 
                             break
 
-        # -------------------------------------------------
-        # UPDATE THOUGHTS
-        # -------------------------------------------------
+        # =================================================
+        # UPDATE PENSAMENTOS
+        # =================================================
 
-        for thought in self.thoughts:
+        for pensamento in self.pensamentos:
 
-            thought.update(dt)
+            pensamento.atualizar(dt)
 
-            if thought.timer <= 0:
+            if pensamento.positivo:
 
-                if not thought.clicked:
+                if pensamento.tempo <= 0:
 
-                    if not thought.positive:
+                    pensamento.clicado = True
 
-                        anxiety_change += 18
+        # =================================================
+        # REMOVER
+        # =================================================
 
-        # -------------------------------------------------
-        # REMOVE
-        # -------------------------------------------------
+        self.pensamentos = [
 
-        self.thoughts = [
+            pensamento
 
-            t for t in self.thoughts
+            for pensamento in self.pensamentos
 
-            if t.timer > 0 and not t.clicked
+            if not pensamento.clicado
         ]
 
-        return anxiety_change, click_consumed
+        return mudanca_ansiedade, clique_consumido
 
-    # -----------------------------------------------------
+    # =====================================================
     # DRAW
-    # -----------------------------------------------------
+    # =====================================================
 
-    def draw(self, screen):
+    def desenhar(self, tela):
 
-        for thought in self.thoughts:
+        for pensamento in self.pensamentos:
 
-            thought.draw(screen)
+            pensamento.desenhar(tela)

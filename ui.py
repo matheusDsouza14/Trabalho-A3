@@ -1,155 +1,102 @@
 import pygame
-
 from config import *
 
 
-# -----------------------------------
-# UI SYSTEM
-# -----------------------------------
-
-class UISystem:
+class SistemaUI:
 
     def __init__(self):
 
-        # START VALUE
-        self.display_anxiety = 10
+        self.ansiedade_visual = 10
 
-    # -----------------------------------
-    # UPDATE
-    # -----------------------------------
+    def atualizar(self, ansiedade_real, dt):
 
-    def update(self, real_anxiety, dt):
+        velocidade_suavizacao = 5
 
-        # SMOOTH LERP
-        smooth_speed = 5
+        self.ansiedade_visual += (
+            ansiedade_real
+            - self.ansiedade_visual
+        ) * velocidade_suavizacao * dt
 
-        self.display_anxiety += (
-
-            real_anxiety
-            - self.display_anxiety
-
-        ) * smooth_speed * dt
-
-        # CLAMP
-        self.display_anxiety = max(
+        self.ansiedade_visual = max(
             0,
-            min(100, self.display_anxiety)
+            min(100, self.ansiedade_visual)
         )
 
-    # -----------------------------------
-    # DRAW
-    # -----------------------------------
-
-    def draw(self, screen, font):
-
-        # -----------------------------------
-        # CLEAN BACKGROUND
-        # PREVENT TEXT BLEED
-        # -----------------------------------
+    def desenhar(self, tela, fonte):
 
         pygame.draw.rect(
-            screen,
-            BACKGROUND,
-            (15, 10, 420, 110)
+            tela,
+            FUNDO,
+            (15, 10, 450, 120)
         )
 
-        # -----------------------------------
-        # TEXT
-        # -----------------------------------
-
-        anxiety_text = font.render(
-            f"Anxiety: {int(self.display_anxiety)}%",
+        texto = fonte.render(
+            f"Ansiedade: {int(self.ansiedade_visual)}%",
             True,
-            WHITE
+            BRANCO
         )
 
-        screen.blit(
-            anxiety_text,
+        tela.blit(
+            texto,
             (40, 25)
         )
 
-        # -----------------------------------
-        # BAR RECT
-        # -----------------------------------
-
-        bg_rect = pygame.Rect(
+        rect_fundo = pygame.Rect(
             40,
-            65,
-            340,
-            28
+            70,
+            360,
+            30
         )
 
-        # -----------------------------------
-        # SOLID PANEL
-        # -----------------------------------
-
-        panel = pygame.Surface(
-            (340, 28),
+        painel = pygame.Surface(
+            (360, 30),
             pygame.SRCALPHA
         )
 
-        panel.fill((0, 0, 0, 0))
-
         pygame.draw.rect(
-            panel,
+            painel,
             (22, 22, 32),
-            (0, 0, 340, 28),
+            (0, 0, 360, 30),
             border_radius=14
         )
 
-        screen.blit(panel, (40, 65))
-
-        # -----------------------------------
-        # FILL WIDTH
-        # -----------------------------------
-
-        fill_width = int(
-            (self.display_anxiety / 100)
-            * 340
+        tela.blit(
+            painel,
+            (40, 70)
         )
 
-        fill_rect = pygame.Rect(
+        largura_preenchimento = int(
+            (self.ansiedade_visual / 100)
+            * 360
+        )
+
+        rect_preenchimento = pygame.Rect(
             40,
-            65,
-            fill_width,
-            28
+            70,
+            largura_preenchimento,
+            30
         )
 
-        # -----------------------------------
-        # COLORS
-        # -----------------------------------
+        if self.ansiedade_visual < 35:
+            cor = (100, 200, 255)
 
-        if self.display_anxiety < 35:
-
-            color = (100, 200, 255)
-
-        elif self.display_anxiety < 70:
-
-            color = (255, 210, 90)
+        elif self.ansiedade_visual < 70:
+            cor = (255, 210, 90)
 
         else:
-
-            color = (255, 90, 90)
-
-        # -----------------------------------
-        # MAIN BAR
-        # -----------------------------------
+            cor = (255, 90, 90)
 
         pygame.draw.rect(
-            screen,
-            color,
-            fill_rect,
+            tela,
+            cor,
+            rect_preenchimento,
             border_radius=14
         )
 
-        # -----------------------------------
-        # BORDER
-        # -----------------------------------
-
         pygame.draw.rect(
-            screen,
-            WHITE,
-            bg_rect,
+            tela,
+            BRANCO,
+            rect_fundo,
             2,
             border_radius=14
         )

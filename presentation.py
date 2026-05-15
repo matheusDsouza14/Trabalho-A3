@@ -3,355 +3,373 @@ import random
 
 from config import *
 
-
 # =========================================================
-# QUESTION DATABASE
-# =========================================================
-# ADD AS MANY QUESTIONS AS YOU WANT
-#
-# FORMAT:
-#
-# {
-#     "question": "Question text",
-#
-#     "choices": [
-#         "Choice 1",
-#         "Choice 2",
-#         "Choice 3",
-#         "Choice 4"
-#     ],
-#
-#     "correct": index_of_correct_answer
-# }
-#
-# IMPORTANT:
-# - ALWAYS USE 4 CHOICES
-# - correct MUST MATCH THE INDEX
+# BANCO DE PERGUNTAS
 # =========================================================
 
-QUESTION_POOL = [
+BANCO_PERGUNTAS = [
 
     {
-        "question": "What is the main topic of your essay?",
-
-        "choices": [
-            "Social anxiety in education",
-            "Marine biology",
-            "Ancient warfare",
-            "Quantum mechanics"
-        ],
-
-        "correct": 0
+        "pergunta": "O que pode ajudar a reduzir a ansiedade?",
+        "escolhas": [
+            "Respirar devagar",
+            "Manter o foco",
+            "Falar com calma",
+            "Continuar apresentando"
+        ]
     },
 
     {
-        "question": "What symptom is discussed first?",
-
-        "choices": [
-            "Aggression",
-            "Panic response",
-            "Memory loss",
-            "Insomnia"
-        ],
-
-        "correct": 1
+        "pergunta": "Qual é um sintoma comum da ansiedade?",
+        "escolhas": [
+            "Voz tremendo",
+            "Mãos suando",
+            "Falta de ar",
+            "Pensamentos acelerados"
+        ]
     },
 
     {
-        "question": "What helps reduce anxiety symptoms?",
-
-        "choices": [
-            "Avoidance",
-            "Controlled breathing",
-            "Isolation",
-            "Shouting"
-        ],
-
-        "correct": 1
+        "pergunta": "O que pensamentos negativos podem causar?",
+        "escolhas": [
+            "Mais ansiedade",
+            "Mais medo",
+            "Mais insegurança",
+            "Pânico"
+        ]
     },
 
     {
-        "question": "What causes distorted perception?",
-
-        "choices": [
-            "Panic overload",
-            "Lack of sleep",
-            "Bright lights",
-            "Background noise"
-        ],
-
-        "correct": 0
+        "pergunta": "O que pode ajudar durante uma crise?",
+        "escolhas": [
+            "Controlar a respiração",
+            "Respirar lentamente",
+            "Se acalmar",
+            "Focar no presente"
+        ]
     },
 
     {
-        "question": "What is the player truly fighting?",
-
-        "choices": [
-            "The teacher",
-            "The classroom",
-            "Their own thoughts",
-            "Homework"
-        ],
-
-        "correct": 2
+        "pergunta": "O que a ansiedade pode distorcer?",
+        "escolhas": [
+            "A percepção",
+            "Os pensamentos",
+            "A confiança",
+            "A realidade"
+        ]
     },
 
     {
-        "question": "What helps regain control?",
-
-        "choices": [
-            "Breathing slowly",
-            "Leaving the room",
-            "Ignoring emotions",
-            "Shouting"
-        ],
-
-        "correct": 0
+        "pergunta": "O que pode ajudar alguém ansioso?",
+        "escolhas": [
+            "Pensamentos positivos",
+            "Respiração",
+            "Calma",
+            "Apoio"
+        ]
     },
 
     {
-        "question": "What physical symptom appears first?",
-
-        "choices": [
-            "Voice shaking",
-            "Coughing",
-            "Blindness",
-            "Headache"
-        ],
-
-        "correct": 0
+        "pergunta": "O que ajuda a prevenir ansiedade extrema?",
+        "escolhas": [
+            "Descansar",
+            "Respirar",
+            "Dormir bem",
+            "Diminuir pressão"
+        ]
     },
 
     {
-        "question": "What is the game's main message?",
+        "pergunta": "Qual é a principal luta do personagem?",
+        "escolhas": [
+            "Os próprios pensamentos",
+            "O medo",
+            "A ansiedade",
+            "A pressão"
+        ]
+    },
 
-        "choices": [
-            "Fear controls reality",
-            "Anxiety distorts perception",
-            "Presentations are pointless",
-            "People are always judging"
-        ],
-
-        "correct": 1
+    {
+        "pergunta": "Qual é a mensagem principal do jogo?",
+        "escolhas": [
+            "A ansiedade engana sua mente",
+            "Você consegue continuar",
+            "Nem tudo é real",
+            "Você não está sozinho"
+        ]
     }
+
 ]
 
-
 # =========================================================
-# PRESENTATION SYSTEM
+# SISTEMA DE APRESENTAÇÃO
 # =========================================================
 
-class PresentationSystem:
+class SistemaApresentacao:
 
-    def __init__(self, amount):
+    def __init__(self, quantidade):
 
-        # -------------------------------------------------
-        # SAFE QUESTION COUNT
-        # -------------------------------------------------
-
-        question_count = min(
-            amount,
-            len(QUESTION_POOL)
+        self.perguntas = random.sample(
+            BANCO_PERGUNTAS,
+            quantidade
         )
 
-        # -------------------------------------------------
-        # RANDOM QUESTIONS
-        # NO DUPLICATES
-        # -------------------------------------------------
+        self.indice = 0
 
-        self.questions = random.sample(
-            QUESTION_POOL,
-            question_count
+        self.completado = False
+
+        self.fonte = pygame.font.Font(
+            FONTE,
+            int(36 * 1.07)
         )
 
-        self.index = 0
-
-        self.completed = False
-
-        self.font = pygame.font.Font(FONT, 34)
-
-        self.small_font = pygame.font.Font(FONT, 24)
+        self.fonte_pequena = pygame.font.Font(
+            FONTE,
+            int(26 * 1.07)
+        )
 
         self.feedback = ""
 
-        self.feedback_timer = 0
+        self.temporizador_feedback = 0
 
-    # -----------------------------------------------------
-    # CURRENT QUESTION
-    # -----------------------------------------------------
+        self.rects_botoes = []
+
+    # =====================================================
+    # PERGUNTA ATUAL
+    # =====================================================
 
     @property
-    def current_question(self):
+    def pergunta_atual(self):
 
-        return self.questions[self.index]
+        return self.perguntas[self.indice]
 
-    # -----------------------------------------------------
+    # =====================================================
+    # BOTÕES RESPONSIVOS
+    # =====================================================
+
+    def criar_botao_responsivo(self, texto, y):
+
+        largura_texto = self.fonte_pequena.size(
+            texto
+        )[0]
+
+        largura = max(
+            320,
+            largura_texto + 60
+        )
+
+        altura = 65
+
+        # =============================================
+        # ALINHADO À ESQUERDA
+        # =============================================
+
+        x = 70
+
+        return pygame.Rect(
+            x,
+            y,
+            largura,
+            altura
+        )
+
+    # =====================================================
     # UPDATE
-    # -----------------------------------------------------
+    # =====================================================
 
-    def update(self, events, game_state):
+    def atualizar(self, eventos, estado_jogo):
 
-        if self.completed:
+        if self.completado:
             return
 
         mouse = pygame.mouse.get_pos()
 
-        for event in events:
+        self.rects_botoes.clear()
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+        for i, escolha in enumerate(
+            self.pergunta_atual["escolhas"]
+        ):
 
-                if event.button == 1:
+            rect = self.criar_botao_responsivo(
+                escolha,
+                240 + i * 95
+            )
 
-                    for i in range(4):
+            self.rects_botoes.append(rect)
 
-                        rect = pygame.Rect(
-                            120,
-                            250 + i * 90,
-                            700,
-                            60
-                        )
+        for evento in eventos:
+
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+
+                if evento.button == 1:
+
+                    for rect in self.rects_botoes:
 
                         if rect.collidepoint(mouse):
 
-                            # -----------------------------
-                            # CORRECT
-                            # -----------------------------
+                            # =============================
+                            # TODAS AS RESPOSTAS
+                            # AVANÇAM A APRESENTAÇÃO
+                            # E AUMENTAM ANSIEDADE
+                            # =============================
 
-                            if i == self.current_question["correct"]:
+                            self.feedback = (
+                                "Você continua falando..."
+                            )
 
-                                self.feedback = "You kept going."
+                            # =================================
+                            # ANSIEDADE SOBE
+                            # =================================
 
-                                game_state.anxiety -= 8
+                            estado_jogo.ansiedade += 8
 
-                            # -----------------------------
-                            # WRONG
-                            # -----------------------------
+                            # =================================
+                            # PRESSÃO AUMENTA
+                            # =================================
 
-                            else:
+                            estado_jogo.velocidade_ansiedade += 0.7
 
-                                self.feedback = "Your thoughts spiral."
+                            self.temporizador_feedback = 1.2
 
-                                game_state.anxiety += 18
+                            self.indice += 1
 
-                            # -----------------------------
-                            # PRESSURE BUILDS
-                            # -----------------------------
+                            if self.indice >= len(self.perguntas):
 
-                            game_state.anxiety_rate += 0.7
-
-                            self.feedback_timer = 1.5
-
-                            self.index += 1
-
-                            # -----------------------------
-                            # FINISH
-                            # -----------------------------
-
-                            if self.index >= len(self.questions):
-
-                                self.completed = True
+                                self.completado = True
 
                             break
 
-        # FEEDBACK TIMER
-        if self.feedback_timer > 0:
+        if self.temporizador_feedback > 0:
 
-            self.feedback_timer -= 0.016
+            self.temporizador_feedback -= 0.016
 
-    # -----------------------------------------------------
+    # =====================================================
     # DRAW
-    # -----------------------------------------------------
+    # =====================================================
 
-    def draw(self, screen):
+    def desenhar(self, tela):
 
-        if self.completed:
+        if self.completado:
             return
 
-        q = self.current_question
+        pergunta = self.pergunta_atual
 
-        # TITLE
-        title = self.font.render(
-            "Class Presentation",
+        # =================================================
+        # TÍTULO
+        # =================================================
+
+        titulo = self.fonte.render(
+            "Apresentação",
             True,
-            WHITE
+            BRANCO
         )
 
-        screen.blit(title, (70, 60))
-
-        # QUESTION
-        question = self.font.render(
-            q["question"],
-            True,
-            WHITE
+        tela.blit(
+            titulo,
+            (70, 60)
         )
 
-        screen.blit(question, (70, 150))
+        # =================================================
+        # PERGUNTA
+        # =================================================
+
+        render_pergunta = self.fonte.render(
+            pergunta["pergunta"],
+            True,
+            BRANCO
+        )
+
+        tela.blit(
+            render_pergunta,
+            (70, 160)
+        )
 
         mouse = pygame.mouse.get_pos()
 
-        # CHOICES
-        for i, choice in enumerate(q["choices"]):
+        self.rects_botoes.clear()
 
-            rect = pygame.Rect(
-                120,
-                250 + i * 90,
-                700,
-                60
+        # =================================================
+        # ESCOLHAS
+        # =================================================
+
+        for i, escolha in enumerate(
+            pergunta["escolhas"]
+        ):
+
+            rect = self.criar_botao_responsivo(
+                escolha,
+                240 + i * 95
             )
 
-            hovering = rect.collidepoint(mouse)
+            self.rects_botoes.append(rect)
 
-            color = PANEL
+            passando_mouse = rect.collidepoint(mouse)
 
-            if hovering:
+            cor = PAINEL
 
-                color = (60, 60, 80)
+            if passando_mouse:
+                cor = (60, 60, 80)
 
             pygame.draw.rect(
-                screen,
-                color,
+                tela,
+                cor,
                 rect,
                 border_radius=14
             )
 
             pygame.draw.rect(
-                screen,
-                WHITE,
+                tela,
+                BRANCO,
                 rect,
                 2,
                 border_radius=14
             )
 
-            text = self.small_font.render(
-                choice,
+            render = self.fonte_pequena.render(
+                escolha,
                 True,
-                WHITE
+                BRANCO
             )
 
-            screen.blit(
-                text,
+            tela.blit(
+                render,
                 (
-                    rect.x + 20,
-                    rect.y + 18
+                    rect.centerx
+                    - render.get_width() // 2,
+
+                    rect.centery
+                    - render.get_height() // 2
                 )
             )
 
-        # PROGRESS
-        progress = self.small_font.render(
-            f"Question {self.index + 1}/{len(self.questions)}",
+        # =================================================
+        # PROGRESSO
+        # =================================================
+
+        progresso = self.fonte_pequena.render(
+            f"Pergunta {self.indice + 1}/9",
             True,
-            GRAY
+            CINZA
         )
 
-        screen.blit(progress, (70, 650))
+        tela.blit(
+            progresso,
+            (70, 650)
+        )
 
+        # =================================================
         # FEEDBACK
-        if self.feedback_timer > 0:
+        # =================================================
 
-            feedback = self.small_font.render(
+        if self.temporizador_feedback > 0:
+
+            feedback = self.fonte_pequena.render(
                 self.feedback,
                 True,
-                GREEN
+                VERMELHO
             )
 
-            screen.blit(feedback, (900, 650))
+            tela.blit(
+                feedback,
+                (820, 650)
+            )

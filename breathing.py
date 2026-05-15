@@ -1,206 +1,157 @@
 import pygame
 import math
-
 from config import *
 
 
-class BreathSystem:
-
+class SistemaRespiracao:
     def __init__(self):
+        self.raio_base = 55
+        self.raio = self.raio_base
+        self.raio_maximo = 75
 
-        self.base_radius = 55
+        self.segurar = False
+        self.tempo_segurando = 0
+        self.completado = False
 
-        self.radius = self.base_radius
-
-        self.max_radius = 75
-
-        self.holding = False
-
-        self.hold_time = 0
-
-        self.completed = False
-
-        self.center = (
-            WIDTH - 120,
-            HEIGHT - 120
+        self.centro = (
+            LARGURA - 120,
+            ALTURA - 120
         )
 
-        self.font = pygame.font.Font(
-            FONT,
-            22
+        self.fonte = pygame.font.Font(
+            FONTE,
+            int(22 * 1.07)
         )
 
-        # ANIMATION TIMER
-        self.anim_timer = 0
+        self.temporizador_animacao = 0
 
-    # -----------------------------------
-    # UPDATE
-    # -----------------------------------
-
-    def update(self, events, dt):
-
+    def atualizar(self, eventos, dt):
         mouse = pygame.mouse.get_pos()
 
-        self.completed = False
+        self.completado = False
+        self.temporizador_animacao += dt
 
-        self.anim_timer += dt
-
-        # BUTTON COLLISION
-        distance = math.dist(
+        distancia = math.dist(
             mouse,
-            self.center
+            self.centro
         )
 
-        hovering = distance <= self.radius
+        passando_mouse = distancia <= self.raio
 
-        mouse_pressed = pygame.mouse.get_pressed()[0]
+        mouse_pressionado = pygame.mouse.get_pressed()[0]
 
-        # -----------------------------------
-        # HOLDING BUTTON
-        # -----------------------------------
+        if passando_mouse and mouse_pressionado:
+            self.segurar = True
+            self.tempo_segurando += dt
 
-        if hovering and mouse_pressed:
-
-            self.holding = True
-
-            self.hold_time += dt
-
-            # -----------------------------------
-            # BREATHING PULSE
-            # -----------------------------------
-
-            pulse = math.sin(
-                self.anim_timer * 4
+            pulso = math.sin(
+                self.temporizador_animacao * 4
             ) * 8
 
-            self.radius = self.base_radius + pulse
+            self.raio = self.raio_base + pulso
 
-            # SUCCESS
-            if self.hold_time >= 2:
-
-                self.completed = True
-
-                self.hold_time = 0
+            if self.tempo_segurando >= 2:
+                self.completado = True
+                self.tempo_segurando = 0
 
         else:
+            self.segurar = False
+            self.tempo_segurando = 0
 
-            self.holding = False
-
-            self.hold_time = 0
-
-            # SMOOTH RETURN
-            self.radius += (
-                self.base_radius - self.radius
+            self.raio += (
+                self.raio_base - self.raio
             ) * 0.15
 
-        return self.completed
+        return self.completado
 
-    # -----------------------------------
-    # DRAW
-    # -----------------------------------
+    def desenhar(self, tela):
 
-    def draw(self, screen):
-
-        # OUTER GLOW
-        glow_surface = pygame.Surface(
+        brilho = pygame.Surface(
             (220, 220),
             pygame.SRCALPHA
         )
 
-        glow_radius = int(self.radius + 18)
+        raio_brilho = int(self.raio + 18)
 
         pygame.draw.circle(
-            glow_surface,
+            brilho,
             (120, 180, 255, 40),
             (110, 110),
-            glow_radius
+            raio_brilho
         )
 
-        screen.blit(
-            glow_surface,
+        tela.blit(
+            brilho,
             (
-                self.center[0] - 110,
-                self.center[1] - 110
+                self.centro[0] - 110,
+                self.centro[1] - 110
             )
         )
 
-        # MAIN BUTTON
-        color = (120, 170, 255)
+        cor = (120, 170, 255)
 
-        if self.holding:
-
-            color = (170, 210, 255)
+        if self.segurar:
+            cor = (170, 210, 255)
 
         pygame.draw.circle(
-            screen,
-            color,
-            self.center,
-            int(self.radius)
+            tela,
+            cor,
+            self.centro,
+            int(self.raio)
         )
 
         pygame.draw.circle(
-            screen,
-            WHITE,
-            self.center,
-            int(self.radius),
+            tela,
+            BRANCO,
+            self.centro,
+            int(self.raio),
             4
         )
 
-        # TEXT
-        if self.holding:
+        texto = "Respire..." if self.segurar else "Segure"
 
-            label = "Breathe..."
-
-        else:
-
-            label = "Hold"
-
-        text = self.font.render(
-            label,
+        render = self.fonte.render(
+            texto,
             True,
-            WHITE
+            BRANCO
         )
 
-        screen.blit(
-            text,
+        tela.blit(
+            render,
             (
-                self.center[0]
-                - text.get_width() // 2,
-
-                self.center[1]
-                - text.get_height() // 2
+                self.centro[0] - render.get_width() // 2,
+                self.centro[1] - render.get_height() // 2
             )
         )
 
-        # HOLD PROGRESS
-        progress = min(
-            self.hold_time / 2,
+        progresso = min(
+            self.tempo_segurando / 2,
             1
         )
 
-        progress_width = 120
+        largura_barra = 120
 
-        bar_rect = pygame.Rect(
-            self.center[0] - 60,
-            self.center[1] + 85,
-            progress_width,
+        rect_barra = pygame.Rect(
+            self.centro[0] - 60,
+            self.centro[1] + 85,
+            largura_barra,
             10
         )
 
         pygame.draw.rect(
-            screen,
+            tela,
             (40, 40, 50),
-            bar_rect,
+            rect_barra,
             border_radius=8
         )
 
         pygame.draw.rect(
-            screen,
+            tela,
             (120, 200, 255),
             (
-                bar_rect.x,
-                bar_rect.y,
-                progress_width * progress,
+                rect_barra.x,
+                rect_barra.y,
+                largura_barra * progresso,
                 10
             ),
             border_radius=8

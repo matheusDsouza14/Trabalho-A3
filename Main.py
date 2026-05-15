@@ -2,34 +2,41 @@ import pygame
 import sys
 
 from config import *
-from game_state import GameState
+from game_state import EstadoJogo
+
+
 def main():
 
     pygame.init()
 
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    tela = pygame.display.set_mode(
+        (LARGURA, ALTURA)
+    )
 
-    pygame.display.set_caption("Hold Your Breath")
+    pygame.display.set_caption(
+        "Segure Sua Respiração"
+    )
 
-    clock = pygame.time.Clock()
+    relogio = pygame.time.Clock()
 
-    game = GameState(screen)
+    jogo = EstadoJogo(tela)
 
-    while game.running:
+    while jogo.rodando:
 
-        dt = clock.tick(FPS) / 1000
+        dt = relogio.tick(FPS) / 1000
 
-        events = pygame.event.get()
+        eventos = pygame.event.get()
 
-        for event in events:
+        for evento in eventos:
 
-            if event.type == pygame.QUIT:
+            if evento.type == pygame.QUIT:
+
                 pygame.quit()
                 sys.exit()
 
-        game.update(dt, events)
+        jogo.atualizar(dt, eventos)
 
-        game.draw()
+        jogo.desenhar()
 
         pygame.display.flip()
 
