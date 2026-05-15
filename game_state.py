@@ -230,8 +230,8 @@ class EstadoJogo:
 
             linhas = [
                 "Ninguém percebeu o caos na sua mente.",
-                "A apresentação terminou bem.",
-                "Deu tudo certo :)"
+                "Tudo deu certo :)",
+                "Parabens!!!"
             ]
 
             cor = BRANCO
